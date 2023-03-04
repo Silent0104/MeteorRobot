@@ -2,10 +2,10 @@ import random
 from datetime import datetime
 
 from pyrogram import filters
-from pyrogram.enums import ChatType
 
 from MeteorRobot import pbot
-from MeteorRobot.utils.mongo import get_couple, save_couple
+from MeteorRobot.utils.errors import capture_err
+from MeteorRobot.ex_plugins.dbfunctions import get_couple, save_couple
 
 
 # Date and time
