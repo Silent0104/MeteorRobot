@@ -103,6 +103,7 @@ buttons = [
         InlineKeyboardButton(text=f"❄️ 𝑨𝑩𝑶𝑼𝑻 ❄️", callback_data="meteor_"),
         InlineKeyboardButton(
             text=" 𝑻𝑹𝒀 𝑰𝑵𝑳𝑰𝑵𝑬!​​", switch_inline_query_current_chat=""
+        ),    
     ],
     [
         InlineKeyboardButton(text=f"🎵𝑴𝒖𝒔𝒊𝒄🎵", callback_data="source_"),
