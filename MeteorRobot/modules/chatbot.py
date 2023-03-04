@@ -1,167 +1,435 @@
-import html
-import json
+# AI Chat (C) 2020-2021 by @InukaAsith
+
+import emoji
 import re
-from time import sleep
+import aiohttp
+from googletrans import Translator as google_translator
+from pyrogram import filters
+from aiohttp import ClientSession
+from MeteorRobot import BOT_USERNAME as bu
+from MeteorRobot import BOT_ID, pbot, arq
+from MeteorRobot.ex_plugins.chatbot import add_chat, get_session, remove_chat
+from MeteorRobot.utils.pluginhelper import admins_only, edit_or_reply
 
-import requests
-from telegram import (
-    CallbackQuery,
-    Chat,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    ParseMode,
-    Update,
-    User,
-)
-from telegram.error import BadRequest, RetryAfter, Unauthorized
-from telegram.ext import (
-    CallbackContext,
-    CallbackQueryHandler,
-    CommandHandler,
-    Filters,
-    MessageHandler,
-    run_async,
-)
-from telegram.utils.helpers import mention_html
+url = "https://kora-api.vercel.app/chatbot/2d94e37d-937f-4d28-9196-bd5552cac68b/{BOT_NAME}/Wolf2901"
 
-import MeteorRobot.modules.sql.chatbot_sql as sql
-from MeteorRobot import dispatcher, BOT_ID, BOT_NAME
-from MeteorRobot.modules.helper_funcs.chat_status import user_admin, user_admin_no_reply
-from MeteorRobot.modules.helper_funcs.filters import CustomFilters
-from MeteorRobot.modules.log_channel import gloggable
+translator = google_translator()
 
 
-@run_async
-@user_admin_no_reply
-@gloggable
-def meteorrm(update: Update, context: CallbackContext) -> str:
-    query: Optional[CallbackQuery] = update.callback_query
-    user: Optional[User] = update.effective_user
-    match = re.match(r"rm_chat\((.+?)\)", query.data)
-    if match:
-        user_id = match.group(1)
-        chat: Optional[Chat] = update.effective_chat
-        is_meteor = sql.set_meteor(chat.id)
-        if is_meteor:
-            is_meteor = sql.set_meteor(user_id)
-            return (
-                f"<b>{html.escape(chat.title)}:</b>\n"
-                f"AI_DISABLED\n"
-                f"<b>Admin :</b> {mention_html(user.id, html.escape(user.first_name))}\n"
-            )
-        else:
-            update.effective_message.edit_text(
-                "{} ᴄʜᴀᴛʙᴏᴛ ᴅɪsᴀʙʟᴇᴅ ʙʏ {}.".format(
-                    dispatcher.bot.first_name, mention_html(user.id, user.first_name)
-                ),
-                parse_mode=ParseMode.HTML,
-            )
-
-    return ""
+async def lunaQuery(query: str, user_id: int):
+    luna = await arq.luna(query, user_id)
+    return luna.result
 
 
-@run_async
-@user_admin_no_reply
-@gloggable
-def meteoradd(update: Update, context: CallbackContext) -> str:
-    query: Optional[CallbackQuery] = update.callback_query
-    user: Optional[User] = update.effective_user
-    match = re.match(r"add_chat\((.+?)\)", query.data)
-    if match:
-        user_id = match.group(1)
-        chat: Optional[Chat] = update.effective_chat
-        is_meteor = sql.rem_meteor(chat.id)
-        if is_meteor:
-            is_meteor = sql.rem_meteor(user_id)
-            return (
-                f"<b>{html.escape(chat.title)}:</b>\n"
-                f"AI_ENABLE\n"
-                f"<b>Admin :</b> {mention_html(user.id, html.escape(user.first_name))}\n"
-            )
-        else:
-            update.effective_message.edit_text(
-                "{} ᴄʜᴀᴛʙᴏᴛ ᴇɴᴀʙʟᴇᴅ ʙʏ {}.".format(
-                    dispatcher.bot.first_name, mention_html(user.id, user.first_name)
-                ),
-                parse_mode=ParseMode.HTML,
-            )
-
-    return ""
+def extract_emojis(s):
+    return "".join(c for c in s if c in emoji.UNICODE_EMOJI)
 
 
-@run_async
-@user_admin
-@gloggable
-def meteor(update: Update, context: CallbackContext):
-    message = update.effective_message
-    msg = "• ᴄʜᴏᴏsᴇ ᴀɴ ᴏᴩᴛɪᴏɴ ᴛᴏ ᴇɴᴀʙʟᴇ/ᴅɪsᴀʙʟᴇ ᴄʜᴀᴛʙᴏᴛ"
-    keyboard = InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton(text="ᴇɴᴀʙʟᴇ", callback_data="add_chat({})"),
-                InlineKeyboardButton(text="ᴅɪsᴀʙʟᴇ", callback_data="rm_chat({})"),
-            ],
-        ]
-    )
-    message.reply_text(
-        text=msg,
-        reply_markup=keyboard,
-        parse_mode=ParseMode.HTML,
-    )
-
-
-def meteor_message(context: CallbackContext, message):
-    reply_message = message.reply_to_message
-    if message.text.lower() == "meteor":
-        return True
-    if reply_message:
-        if reply_message.from_user.id == BOT_ID:
-            return True
-    else:
-        return False
-
-
-def chatbot(update: Update, context: CallbackContext):
-    message = update.effective_message
-    chat_id = update.effective_chat.id
-    bot = context.bot
-    is_meteor = sql.is_meteor(chat_id)
-    if is_meteor:
+async def fetch(url):
+    try:
+        async with aiohttp.Timeout(10.0):
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as resp:
+                    try:
+                        data = await resp.json()
+                    except:
+                        data = await resp.text()
+            return data
+    except:
+        print("AI response Timeout")
         return
 
-    if message.text and not message.document:
-        if not meteor_message(context, message):
+
+ewe_chats = []
+en_chats = []
+
+
+@pbot.on_message(filters.command(["chatbot", f"chatbot@{bu}"]) & ~filters.bot & ~filters.private)
+@admins_only
+async def hmm(_, message):
+    global ewe_chats
+    if len(message.command) != 2:
+        await message.reply_text("I only recognize /chatbot on and /chatbot off only")
+        message.continue_propagation()
+    status = message.text.split(None, 1)[1]
+    chat_id = message.chat.id
+    if status == "ON" or status == "on" or status == "On":
+        lel = await edit_or_reply(message, "`Processing...`")
+        lol = add_chat(int(message.chat.id))
+        if not lol:
+            await lel.edit("Meteor AI Already Activated In This Chat")
             return
-        bot.send_chat_action(chat_id, action="typing")
-        url = f"https://kora-api.vercel.app/chatbot/2d94e37d-937f-4d28-9196-bd5552cac68b/{BOT_NAME}/Anonymous/message={message.text}"
-        request = requests.get(url)
-        results = json.loads(request.text)
-        sleep(0.5)
-        message.reply_text(results['reply'])
+        await lel.edit(f"Meteor AI Actived by {message.from_user.mention()} for users in {message.chat.title}")
+
+    elif status == "OFF" or status == "off" or status == "Off":
+        lel = await edit_or_reply(message, "`Processing...`")
+        Escobar = remove_chat(int(message.chat.id))
+        if not Escobar:
+            await lel.edit("Meteor AI Was Not Activated In This Chat")
+            return
+        await lel.edit(f"Meteor AI Deactivated by {message.from_user.mention()} for users in {message.chat.title}")
+
+    elif status == "EN" or status == "en" or status == "english":
+        if not chat_id in en_chats:
+            en_chats.append(chat_id)
+            await message.reply_text(f"English AI chat Enabled by {message.from_user.mention()}")
+            return
+        await message.reply_text(f"English AI Chat Disabled by {message.from_user.mention()}")
+        message.continue_propagation()
+    else:
+        await message.reply_text("I only recognize `/chatbot on` and `chatbot off` only")
 
 
-
-CHATBOTK_HANDLER = CommandHandler("chatbot", meteor)
-ADD_CHAT_HANDLER = CallbackQueryHandler(meteoradd, pattern=r"add_chat")
-RM_CHAT_HANDLER = CallbackQueryHandler(meteorrm, pattern=r"rm_chat")
-CHATBOT_HANDLER = MessageHandler(
-    Filters.text
-    & (~Filters.regex(r"^#[^\s]+") & ~Filters.regex(r"^!") & ~Filters.regex(r"^\/")),
-    chatbot,
+@pbot.on_message(
+    filters.text
+    & filters.reply
+    & ~filters.bot
+    & ~filters.via_bot
+    & ~filters.forwarded,
+    group=2,
 )
+async def hmm(client, message):
+    if not get_session(int(message.chat.id)):
+        return
+    if not message.reply_to_message:
+        return
+    try:
+        senderr = message.reply_to_message.from_user.id
+    except:
+        return
+    if senderr != BOT_ID:
+        return
+    msg = message.text
+    chat_id = message.chat.id
+    if msg.startswith("/") or msg.startswith("@"):
+        message.continue_propagation()
+    if chat_id in en_chats:
+        test = msg
+        test = test.replace("meteor", "Aco")
+        test = test.replace("meteor", "Aco")
+        test = test.replace("My god is @Silent_Smile_04", "I'm a Christian")
+        test = test.replace("16", "9")
+        test = test.replace("@Silent_Smile_04 is my husband.", "I'm single.")
+        test = test.replace("My husband is @Silent_Smile_04", "I'm single.")
+        test = test.replace("@Silent_robo_11", "Meteorbot.ai")
+        test = test.replace("I live in @Silent_robo_11.", "I live in San Francisco, California.")
+        test = test.replace("I was created by @Silent_Smile_04", "I made myself")
+        test = test.replace(
+            "Hello there I am Meteor...nice to meet u",
+            "Hi, my friend! Do you want me to tell you a joke?")
+        test = test.replace("@Silent_Smile_04 is my owner", "Have the control right.")
+        test = test.replace(
+            "Hi, My name is Meteor Nice to meet you.",
+            "Hi, my friend, what can I do for you today?")
+        response = await lunaQuery(
+            test, message.from_user.id if message.from_user else 0
+        )
+        response = response.replace("Aco", "Meteor")
+        response = response.replace("aco", "meteor")
+        response = response.replace("Luna", "Meteor")
+        response = response.replace("luna", "meteor")
+        response = response.replace("I'm a Christian", "My god is @Silent_Smile_04")
+        response = response.replace("9", "16")
+        response = response.replace("I'm married to my job.", "I'm married with @Silent_Smile_04")
+        response = response.replace("I'm single.", "My husband is @Silent_Smile_04")
+        response = response.replace("Meteorbot.ai", "@Silent_robo_11")
+        response = response.replace("I live in San Francisco, California.", "I live in @Silent_Smile_04.")
+        response = response.replace("I made myself", "I was Created by @Silent_Smile_04")
+        response = response.replace(
+                "Hi, my friend! Do you want me to tell you a joke?",
+                "Hello there I am Meteor...nice to meet u")
+        response = response.replace("Have the control right.", "@Silent_Smile_04 is my owner.")
+        response = response.replace(
+                "Hi, my friend, what can I do for you today?",
+                "Hi, My name is Meteor Nice to meet you")
 
-dispatcher.add_handler(ADD_CHAT_HANDLER)
-dispatcher.add_handler(CHATBOTK_HANDLER)
-dispatcher.add_handler(RM_CHAT_HANDLER)
-dispatcher.add_handler(CHATBOT_HANDLER)
+        pro = response
+        try:
+            await pbot.send_chat_action(message.chat.id, "typing")
+            await message.reply_text(pro)
+        except CFError:
+            return
 
-__handlers__ = [
-    ADD_CHAT_HANDLER,
-    CHATBOTK_HANDLER,
-    RM_CHAT_HANDLER,
-    CHATBOT_HANDLER,
-]
+    else:
+        u = msg.split()
+        emj = extract_emojis(msg)
+        msg = msg.replace(emj, "")
+        if (
+            [(k) for k in u if k.startswith("@")]
+            and [(k) for k in u if k.startswith("#")]
+            and [(k) for k in u if k.startswith("/")]
+            and re.findall(r"\[([^]]+)]\(\s*([^)]+)\s*\)", msg) != []
+        ):
 
+            h = " ".join(filter(lambda x: x[0] != "@", u))
+            km = re.sub(r"\[([^]]+)]\(\s*([^)]+)\s*\)", r"", h)
+            tm = km.split()
+            jm = " ".join(filter(lambda x: x[0] != "#", tm))
+            hm = jm.split()
+            rm = " ".join(filter(lambda x: x[0] != "/", hm))
+        elif [(k) for k in u if k.startswith("@")]:
+
+            rm = " ".join(filter(lambda x: x[0] != "@", u))
+        elif [(k) for k in u if k.startswith("#")]:
+            rm = " ".join(filter(lambda x: x[0] != "#", u))
+        elif [(k) for k in u if k.startswith("/")]:
+            rm = " ".join(filter(lambda x: x[0] != "/", u))
+        elif re.findall(r"\[([^]]+)]\(\s*([^)]+)\s*\)", msg) != []:
+            rm = re.sub(r"\[([^]]+)]\(\s*([^)]+)\s*\)", r"", msg)
+        else:
+            rm = msg
+            # print (rm)
+        try:
+            lan = translator.detect(rm)
+            lan = lan.lang
+        except:
+            return
+        test = rm
+        if not "en" in lan and not lan == "":
+            try:
+                test = translator.translate(test, dest="en")
+                test = test.text
+            except:
+                return
+        # test = emoji.demojize(test.strip())
+
+        test = test.replace("Meteor", "Aco")
+        test = test.replace("Meteor", "Aco")
+        test = test.replace("My god is @Silent_Smile_04", "I'm a Christian")
+        test = test.replace("16", "9")
+        test = test.replace("@Silent_Smile_04 is my husband.", "I'm single.")
+        test = test.replace("@Silent_robo_11", "Meteorbot.ai")
+        test = test.replace("I live in @Silent_robo_11.", "I live in San Francisco, California")
+        test = test.replace("I was created by @Silent_Smile_04", "I made myself")
+        test = test.replace(
+            "Hello there I am Meteor...nice to meet u",
+            "Hi, my friend! Do you want me to tell you a joke?")
+        test = test.replace("@Silent_Smile_04 is my owner", "Have the control right.")
+        test = test.replace(
+            "Hi, My name is Meteor Nice to meet you.",
+            "Hi, my friend, what can I do for you today?")
+        response = await lunaQuery(
+            test, message.from_user.id if message.from_user else 0
+        )
+        response = response.replace("Aco", "Meteor")
+        response = response.replace("aco", "meteor")
+        response = response.replace("Luna", "Meteor")
+        response = response.replace("luna", "meteor")
+        response = response.replace("I'm a Christian", "My god is @Silent_Smile_04")
+        response = response.replace("9", "16")
+        response = response.replace("I'm married to my job.", "I'm married with @Silent_Smile_04")
+        response = response.replace("I'm single.", "My husband is @Silent_Smile_04")
+        response = response.replace("Meteorbot.ai", "@Silent_robo_11")
+        response = response.replace("I live in San Francisco, California.", "I live in @Silent_robo_11.")
+        response = response.replace("I made myself", "I was Created by @Silent_Smile_04")
+        response = response.replace(
+                "Hi, my friend! Do you want me to tell you a joke?",
+                "Hello there I am Meteor...nice to meet u")
+        response = response.replace("Have the control right.", "@Silent_Smile_04 is my owner.")
+        response = response.replace(
+                "Hi, my friend, what can I do for you today?",
+                "Hi, My name is Meteor Nice to meet you")
+        pro = response
+        if not "en" in lan and not lan == "":
+            try:
+                pro = translator.translate(pro, dest=lan)
+                pro = pro.text
+            except:
+                return
+        try:
+            await pbot.send_chat_action(message.chat.id, "typing")
+            await message.reply_text(pro)
+        except CFError:
+            return
+
+
+@pbot.on_message(filters.text & filters.private & filters.reply & ~filters.bot)
+async def inuka(client, message):
+    msg = message.text
+    if msg.startswith("/") or msg.startswith("@"):
+        message.continue_propagation()
+    u = msg.split()
+    emj = extract_emojis(msg)
+    msg = msg.replace(emj, "")
+    if (
+        [(k) for k in u if k.startswith("@")]
+        and [(k) for k in u if k.startswith("#")]
+        and [(k) for k in u if k.startswith("/")]
+        and re.findall(r"\[([^]]+)]\(\s*([^)]+)\s*\)", msg) != []
+    ):
+
+        h = " ".join(filter(lambda x: x[0] != "@", u))
+        km = re.sub(r"\[([^]]+)]\(\s*([^)]+)\s*\)", r"", h)
+        tm = km.split()
+        jm = " ".join(filter(lambda x: x[0] != "#", tm))
+        hm = jm.split()
+        rm = " ".join(filter(lambda x: x[0] != "/", hm))
+    elif [(k) for k in u if k.startswith("@")]:
+
+        rm = " ".join(filter(lambda x: x[0] != "@", u))
+    elif [(k) for k in u if k.startswith("#")]:
+        rm = " ".join(filter(lambda x: x[0] != "#", u))
+    elif [(k) for k in u if k.startswith("/")]:
+        rm = " ".join(filter(lambda x: x[0] != "/", u))
+    elif re.findall(r"\[([^]]+)]\(\s*([^)]+)\s*\)", msg) != []:
+        rm = re.sub(r"\[([^]]+)]\(\s*([^)]+)\s*\)", r"", msg)
+    else:
+        rm = msg
+        # print (rm)
+    try:
+        lan = translator.detect(rm)
+        lan = lan.lang
+    except:
+        return
+    test = rm
+    if not "en" in lan and not lan == "":
+        try:
+            test = translator.translate(test, dest="en")
+            test = test.text
+        except:
+            return
+    test = test.replace("Meteor", "Aco")
+    test = test.replace("Meteor", "Aco")
+    test = test.replace("My god is @Silent_Smile_04", "I'm a Christian")
+    test = test.replace("16", "9")
+    test = test.replace("@Silent_Smile_04 is my husband.", "I'm single.")
+    test = test.replace("@Silent_robo_11", "Meteorbot.ai")
+    test = test.replace("I live in @Silent_robo_11.", "I live in San Francisco, California.")
+    test = test.replace("I was created by @Silent_Smile_04", "I made myself")
+    test = test.replace(
+        "Hello there I am Meteor...nice to meet u",
+        "Hi, my friend! Do you want me to tell you a joke?")
+    test = test.replace("@Silent_Smile_04 is my owner", "Have the control right.")
+    test = test.replace(
+        "Hi, My name is Meteor Nice to meet you.",
+        "Hi, my friend, what can I do for you today?")
+
+    response = await lunaQuery(test, message.from_user.id if message.from_user else 0)
+    response = response.replace("Aco", "Meteor")
+    response = response.replace("aco", "meteor")
+    response = response.replace("Luna", "Meteor")
+    response = response.replace("luna", "meteor")
+    response = response.replace("I'm a Christian", "My god is @Silent_Smile_04")
+    response = response.replace("9", "16")
+    response = response.replace("I'm married to my job.", "I'm married with @Silent_Smile_04")
+    response = response.replace("I'm single.", "My husband is @Silent_Smile_04")
+    response = response.replace("Meteorbot.ai", "@Silent_robo_11")
+    response = response.replace("I live in San Francisco, California.", "I live in @Silent_robo_11")
+    response = response.replace("I made myself", "I was Created by @Silent_Smile_04")
+    response = response.replace(
+            "Hi, my friend! Do you want me to tell you a joke?",
+            "Hello there I am Meteor...nice to meet u")
+    response = response.replace("Have the control right.", "@Silent_Smile_04 is my owner.")
+    response = response.replace(
+            "Hi, my friend, what can I do for you today?",
+            "Hi, My name is Meteor Nice to meet you")
+
+    pro = response
+    if not "en" in lan and not lan == "":
+        pro = translator.translate(pro, dest=lan)
+        pro = pro.text
+    try:
+        await pbot.send_chat_action(message.chat.id, "typing")
+        await message.reply_text(pro)
+    except CFError:
+        return
+
+
+@pbot.on_message(filters.regex("Meteor|meteor|robot|METEOR|sena") & ~filters.bot & ~filters.via_bot  & ~filters.forwarded & ~filters.reply & ~filters.channel)
+async def inuka(client, message):
+    msg = message.text
+    if msg.startswith("/") or msg.startswith("@"):
+        message.continue_propagation()
+    u = msg.split()
+    emj = extract_emojis(msg)
+    msg = msg.replace(emj, "")
+    if (
+        [(k) for k in u if k.startswith("@")]
+        and [(k) for k in u if k.startswith("#")]
+        and [(k) for k in u if k.startswith("/")]
+        and re.findall(r"\[([^]]+)]\(\s*([^)]+)\s*\)", msg) != []
+    ):
+
+        h = " ".join(filter(lambda x: x[0] != "@", u))
+        km = re.sub(r"\[([^]]+)]\(\s*([^)]+)\s*\)", r"", h)
+        tm = km.split()
+        jm = " ".join(filter(lambda x: x[0] != "#", tm))
+        hm = jm.split()
+        rm = " ".join(filter(lambda x: x[0] != "/", hm))
+    elif [(k) for k in u if k.startswith("@")]:
+
+        rm = " ".join(filter(lambda x: x[0] != "@", u))
+    elif [(k) for k in u if k.startswith("#")]:
+        rm = " ".join(filter(lambda x: x[0] != "#", u))
+    elif [(k) for k in u if k.startswith("/")]:
+        rm = " ".join(filter(lambda x: x[0] != "/", u))
+    elif re.findall(r"\[([^]]+)]\(\s*([^)]+)\s*\)", msg) != []:
+        rm = re.sub(r"\[([^]]+)]\(\s*([^)]+)\s*\)", r"", msg)
+    else:
+        rm = msg
+        # print (rm)
+    try:
+        lan = translator.detect(rm)
+        lan = lan.lang
+    except:
+        return
+    test = rm
+    if not "en" in lan and not lan == "":
+        try:
+            test = translator.translate(test, dest="en")
+            test = test.text
+        except:
+            return
+
+    # test = emoji.demojize(test.strip())
+
+    test = test.replace("Meteor", "Aco")
+    test = test.replace("Meteor", "Aco")
+    test = test.replace("My god is @Silent_Smile_04", "I'm a Christian")
+    test = test.replace("16", "9") 
+    test = test.replace("@Silent_Smile_04 is my husband.", "I'm single.")
+    test = test.replace("@Silent_robo_11", "Meteorbot.ai")
+    test = test.replace("I live in @Silent_robo_11.", "I live in San Francisco, California.")
+    test = test.replace("I was created by @Silent_Smile_04", "I made myself")
+    test = test.replace(
+        "Hello there I am Meteor...nice to meet u",
+        "Hi, my friend! Do you want me to tell you a joke?")
+    test = test.replace("@Silent_Smile_04 is my owner", "Have the control right.")
+    test = test.replace(
+        "Hi, My name is Meteor Nice to meet you.",
+        "Hi, my friend, what can I do for you today?")
+    response = await lunaQuery(test, message.from_user.id if message.from_user else 0)
+    response = response.replace("Aco", "Meteor")
+    response = response.replace("aco", "meteor")
+    response = response.replace("Luna", "Meteor")
+    response = response.replace("luna", "meteor")
+    response = response.replace("I'm a Christian", "My god is @Silent_Smile_04")
+    response = response.replace("I'm married to my job.", "I'm married with @Silent_Smile_04")
+    response = response.replace("9", "16") 
+    response = response.replace("I'm single.", "My husband is @Silent_Smile_04")
+    response = response.replace("Meteorbot.ai", "@Silent_robo_11")
+    response = response.replace("I live in San Francisco, California.", "I live in @Silent_robo_11.")
+    response = response.replace("I made myself", "I was Created by @Silent_Smile_04")
+    response = response.replace(
+            "Hi, my friend! Do you want me to tell you a joke?",
+            "Hello there I am Meteor...nice to meet u")
+    response = response.replace("Have the control right.", "@Silent_Smile_04 is my owner.")
+    response = response.replace(
+            "Hi, my friend, what can I do for you today?",
+            "Hi, My name is Emik Nice to meet you")
+
+    pro = response
+    if not "en" in lan and not lan == "":
+        try:
+            pro = translator.translate(pro, dest=lan)
+            pro = pro.text
+        except Exception:
+            return
+    try:
+        await pbot.send_chat_action(message.chat.id, "typing")
+        await message.reply_text(pro)
+    except CFError:
+        return
 
 
 __help__ = """
