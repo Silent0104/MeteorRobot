@@ -108,7 +108,7 @@ buttons = [
     [
         InlineKeyboardButton(text=f"🎵𝑴𝒖𝒔𝒊𝒄🎵", callback_data="source_"),
         InlineKeyboardButton(
-            text=​​"𝑶𝒘𝒏𝒆𝒓", url=https://t.me/Wolf_2904)
+            text="𝑶𝒘𝒏𝒆𝒓", url=https://t.me/Wolf_2904),
     ],
 ]
 
