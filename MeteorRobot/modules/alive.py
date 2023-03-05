@@ -9,13 +9,13 @@ from MeteorRobot.events import register
 from MeteorRobot import telethn as tbot
 
 
-PHOTO = "https://te.legra.ph/file/23dcf3139510088f56fce.jpg"
+PHOTO = "https://te.legra.ph/file/653cc589cef8ce310a9f2.jpg"
 
 @register(pattern=("/alive"))
 async def awake(event):
-  TEXT = f"**Hi [{event.sender.first_name}](tg://user?id={event.sender.id}), I'm Meteor Robot.** \n\n"
+  TEXT = f"**Hi [{event.sender.first_name}](tg://user?id={event.sender.id}), I'm Silent Robot.** \n\n"
   TEXT += "⚪ **I'm Working Properly** \n\n"
-  TEXT += f"⚪ **My Master : [Silent Smile](https://t.me/Silent_Smile_04)** \n\n"
+  TEXT += f"⚪ **My Master : [Lone Wolf](https://t.me/Wolf_2904)** \n\n"
   TEXT += f"⚪ **Library Version :** `{telever}` \n\n"
   TEXT += f"⚪ **Telethon Version :** `{tlhver}` \n\n"
   TEXT += f"⚪ **Pyrogram Version :** `{pyrover}` \n\n"
