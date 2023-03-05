@@ -83,7 +83,7 @@ def get_readable_time(seconds: int) -> str:
 
 PM_START_TEXT = """
 *Hello {} !*
-✪ I'm an anime-theme management bot ᴡɪᴛʜ ꜱᴏᴍᴇ ꜰᴜɴ ᴇxᴛʀᴀꜱ ;)[✨](https://te.legra.ph/file/653cc589cef8ce310a9f2.jpg)
+✪ I'm an anime-theme management bot ᴡɪᴛʜ ꜱᴏᴍᴇ ꜰᴜɴ ᴇxᴛʀᴀꜱ ;)[✨](https://te.legra.ph/file/d5b568d85d1c1e21d5430.jpg)
 ────────────────────────
 ᴀ ᴘᴏᴡᴇʀꜰᴜʟ ɢʀᴏᴜᴘ ᴍᴀɴᴀɢᴇᴍᴇɴᴛ ʙᴏᴛ ʙᴜɪʟᴛ ᴛᴏ ʜᴇʟᴘ ʏᴏᴜ ᴍᴀɴᴀɢᴇ ʏᴏᴜʀ ɢʀᴏᴜᴘ ᴇᴀꜱɪʟʏ ᴀɴᴅ ᴛᴏ ᴘʀᴏᴛᴇᴄᴛ ʏᴏᴜʀ ɢʀᴏᴜᴘ ꜰʀᴏᴍ ꜱᴄᴀᴍᴍᴇʀꜱ ᴀɴᴅ ꜱᴘᴀᴍᴍᴇʀꜱ.
 ᴡʀɪᴛᴛᴇɴ ɪɴ ᴩʏᴛʜᴏɴ ᴡɪᴛʜ sǫʟᴀʟᴄʜᴇᴍʏ ᴀɴᴅ ᴍᴏɴɢᴏᴅʙ ᴀs ᴅᴀᴛᴀʙᴀsᴇ.
@@ -111,7 +111,7 @@ buttons = [
     [
         InlineKeyboardButton(text=f"🎵𝑴𝒖𝒔𝒊𝒄🎵", callback_data="source_"),
         InlineKeyboardButton(
-            text="𝑶𝒘𝒏𝒆𝒓", url="https://t.me/Wolf_2904"
+            text="𝑶𝒘𝒏𝒆𝒓", url="https://t.me/Lynx_X_Bot"
         ),
     ],
 ]
@@ -388,7 +388,7 @@ def meteor_about_callback(update, context):
                     InlineKeyboardButton(text="𝑵𝒐𝒕𝒆𝒔", callback_data="meteor_notes"),
                  ],
                  [
-                    InlineKeyboardButton(text="𝑴𝒆𝒕𝒆𝒐𝒓 𝑺𝒖𝒑𝒑𝒐𝒓𝒕", callback_data="meteor_support"),
+                    InlineKeyboardButton(text="𝑺𝒖𝒑𝒑𝒐𝒓𝒕", callback_data="meteor_support"),
                     InlineKeyboardButton(text="𝑶𝒘𝒏𝒆𝒓", callback_data="meteor_credit"),
                  ],
                  [
@@ -437,8 +437,8 @@ def meteor_about_callback(update, context):
             reply_markup=InlineKeyboardMarkup(
                 [
                  [
-                    InlineKeyboardButton(text="𝑺𝒖𝒑𝒑𝒐𝒓𝒕", url="t.me/Silent_robo_11"),
-                    InlineKeyboardButton(text="𝑼𝒑𝒅𝒂𝒕𝒆𝒔", url="https://t.me/Mine_Bots"),
+                    InlineKeyboardButton(text="𝑺𝒖𝒑𝒑𝒐𝒓𝒕", url="https://t.me/+PYx22tadVaVhMzY1"),
+                    InlineKeyboardButton(text="𝑼𝒑𝒅𝒂𝒕𝒆𝒔", url="https://t.me/MayaOfficiall"),
                  ],
                  [
                     InlineKeyboardButton(text="◁", callback_data="meteor_"),
@@ -457,7 +457,7 @@ def meteor_about_callback(update, context):
             reply_markup=InlineKeyboardMarkup(
                 [
                  [
-                    InlineKeyboardButton(text="𝕎𝕠𝕝𝕗", url="https://github.com/Wolf2901"),
+                    InlineKeyboardButton(text="𝕎𝕠𝕝𝕗", url="https://t.me/Lynx_X_Bot"),
                  ],
                  [
                     InlineKeyboardButton(text="◁", callback_data="meteor_"),
