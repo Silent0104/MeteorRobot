@@ -97,21 +97,21 @@ PM_START_TEXT = """
 buttons = [
     [
         InlineKeyboardButton(
-            text="𝑨𝑫𝑫 𝑴𝑬 𝑻𝑶 𝒀𝑶𝑼𝑹 𝑮𝑹𝑶𝑼𝑷", url=f"t.me/{bu}?startgroup=new"),
+            text="𝐴𝑑𝑑 𝑀𝑒 𝑇𝑜 𝑌𝑜𝑢𝑟 𝐺𝑟𝑜𝑢𝑝", url=f"t.me/{bu}?startgroup=new"),
     ],
     [
-        InlineKeyboardButton(text="𝑯𝑬𝑳𝑷 & 𝑪𝑶𝑴𝑴𝑨𝑵𝑫𝑺", callback_data="help_back"),
+        InlineKeyboardButton(text="𝐻𝑒𝑙𝑝 & 𝐶𝑜𝑚𝑚𝑎𝑛𝑑𝑠", callback_data="help_back"),
     ],
     [
-        InlineKeyboardButton(text=f"❄️ 𝑨𝑩𝑶𝑼𝑻 ❄️", callback_data="meteor_"),
+        InlineKeyboardButton(text=f"❄️𝐴𝑏𝑜𝑢𝑡❄️", callback_data="meteor_"),
         InlineKeyboardButton(
-            text=" 𝑻𝑹𝒀 𝑰𝑵𝑳𝑰𝑵𝑬!​​", switch_inline_query_current_chat=""
+            text="𝐷𝑒𝑣𝑒𝑙𝑜𝑝𝑒𝑟", url="https://t.me/Wolf_2904"
         ),    
     ],
     [
-        InlineKeyboardButton(text=f"🎵𝑴𝒖𝒔𝒊𝒄🎵", callback_data="source_"),
+        InlineKeyboardButton(text=f"🎵𝑀𝑢𝑠𝑖𝑐🎵", callback_data="source_"),
         InlineKeyboardButton(
-            text="𝑶𝒘𝒏𝒆𝒓", url="https://t.me/Lynx_X_Bot"
+            text="𝑂𝑤𝑛𝑒𝑟", url="https://t.me/Lynx_X_Bot"
         ),
     ],
 ]
@@ -437,8 +437,8 @@ def meteor_about_callback(update, context):
             reply_markup=InlineKeyboardMarkup(
                 [
                  [
-                    InlineKeyboardButton(text="𝑺𝒖𝒑𝒑𝒐𝒓𝒕", url="https://t.me/+PYx22tadVaVhMzY1"),
-                    InlineKeyboardButton(text="𝑼𝒑𝒅𝒂𝒕𝒆𝒔", url="https://t.me/MayaOfficiall"),
+                    InlineKeyboardButton(text="𝑺𝒖𝒑𝒑𝒐𝒓𝒕", url="https://t.me/+JWHEg2H-FutjOTU1"),
+                    InlineKeyboardButton(text="𝑼𝒑𝒅𝒂𝒕𝒆𝒔", url="https://t.me/DigiCraze"),
                  ],
                  [
                     InlineKeyboardButton(text="◁", callback_data="meteor_"),
@@ -457,7 +457,7 @@ def meteor_about_callback(update, context):
             reply_markup=InlineKeyboardMarkup(
                 [
                  [
-                    InlineKeyboardButton(text="𝕎𝕠𝕝𝕗", url="https://t.me/Lynx_X_Bot"),
+                    InlineKeyboardButton(text="𝕎𝕠𝕝𝕗", url="https://t.me/Wolf_2904"),
                  ],
                  [
                     InlineKeyboardButton(text="◁", callback_data="meteor_"),
